@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { setupUserEncryption } from '@/utils/crypto';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -28,6 +29,9 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(data.error?.message || 'Registration failed');
 
       setAuth(data.token, data.user);
+
+      await setupUserEncryption(data.user.id, data.token);
+
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);

@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Hash, MessageSquare, Plus, Send, LogOut } from 'lucide-react';
+import { getPrivateKey, encryptMessage, decryptMessage } from '@/utils/crypto';
+import { Hash, Send, LogOut, ShieldCheck } from 'lucide-react';
 
 interface Community {
   id: string;
@@ -20,7 +21,7 @@ interface Channel {
 interface Message {
   id: string;
   channelId: string;
-  content: string;
+  content: string; 
   createdAt: string;
   sender: {
     id: string;
@@ -42,14 +43,12 @@ export default function DashboardPage() {
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!token) {
       router.push('/login');
     }
   }, [token, router]);
 
-  // Fetch communities on load
   useEffect(() => {
     if (!token) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/communities`, {
@@ -65,7 +64,6 @@ export default function DashboardPage() {
       .catch(console.error);
   }, [token]);
 
-  // Fetch channels when active community changes
   useEffect(() => {
     if (!token || !activeCommunity) return;
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/communities/${activeCommunity.id}/channels`, {
@@ -84,50 +82,72 @@ export default function DashboardPage() {
       .catch(console.error);
   }, [token, activeCommunity]);
 
-  // Fetch messages & open WebSocket when active channel changes
   useEffect(() => {
-    if (!token || !activeChannel) return;
+    if (!token || !activeChannel || !user) return;
 
-    // 1. Fetch history via REST
+    const privKey = getPrivateKey(user.id);
+
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/channels/${activeChannel.id}/messages`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then((res) => res.json())
-      .then((data) => {
+      .then(async (data) => {
         if (data.messages) {
-          setMessages(data.messages.reverse());
+          const decryptedMessages = await Promise.all(
+            data.messages.map(async (msg: Message) => {
+              const decryptedContent = privKey ? await decryptMessage(privKey, msg.content) : msg.content;
+              return { ...msg, content: decryptedContent };
+            })
+          );
+          setMessages(decryptedMessages.reverse());
         }
       })
       .catch(console.error);
 
-    // 2. Open WebSocket connection
     const wsUrl = `ws://localhost:4000/ws/channels/${activeChannel.id}?token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
       const payload = JSON.parse(event.data);
       if (payload.event === 'NEW_MESSAGE') {
-        setMessages((prev) => [...prev, payload.data]);
+        const incomingMsg: Message = payload.data;
+        const privKey = getPrivateKey(user.id);
+        const decryptedContent = privKey ? await decryptMessage(privKey, incomingMsg.content) : incomingMsg.content;
+        
+        setMessages((prev) => [...prev, { ...incomingMsg, content: decryptedContent }]);
       }
     };
 
     return () => {
       ws.close();
     };
-  }, [token, activeChannel]);
+  }, [token, activeChannel, user]);
 
-  // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputMessage.trim() || !wsRef.current) return;
+    if (!inputMessage.trim() || !wsRef.current || !user || !token) return;
 
-    wsRef.current.send(JSON.stringify({ content: inputMessage }));
-    setInputMessage('');
+    try {
+      const keyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}/keys`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const keyData = await keyRes.json();
+      
+      let ciphertext = inputMessage;
+      if (keyData.user?.publicKey) {
+        ciphertext = await encryptMessage(keyData.user.publicKey, inputMessage);
+      }
+
+      wsRef.current.send(JSON.stringify({ content: ciphertext }));
+      setInputMessage('');
+    } catch (err) {
+      console.error('Encryption transmission failed:', err);
+    }
   };
 
   if (!user) return null;
@@ -179,7 +199,10 @@ export default function DashboardPage() {
           ))}
         </div>
         <div className="h-14 bg-[#232428] px-3 flex items-center justify-between">
-          <div className="text-sm font-medium text-white truncate">@{user.username}</div>
+          <div className="flex items-center space-x-2 truncate">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="text-sm font-medium text-white truncate">@{user.username}</span>
+          </div>
           <button
             onClick={() => {
               logout();
@@ -196,9 +219,15 @@ export default function DashboardPage() {
       {/* 3. Main Chat Window */}
       <div className="flex-1 flex flex-col bg-[#313338]">
         {/* Chat Header */}
-        <div className="h-12 border-b border-[#1f2023] px-4 flex items-center shadow-sm">
-          <Hash className="w-5 h-5 text-[#80848e] mr-2" />
-          <span className="font-bold text-white">{activeChannel ? activeChannel.name : 'select-channel'}</span>
+        <div className="h-12 border-b border-[#1f2023] px-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center">
+            <Hash className="w-5 h-5 text-[#80848e] mr-2" />
+            <span className="font-bold text-white">{activeChannel ? activeChannel.name : 'select-channel'}</span>
+          </div>
+          <div className="flex items-center space-x-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>End-to-End Encrypted</span>
+          </div>
         </div>
 
         {/* Message List */}
@@ -226,7 +255,7 @@ export default function DashboardPage() {
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={activeChannel ? `Message #${activeChannel.name}` : 'Select a channel first'}
+              placeholder={activeChannel ? `Message #${activeChannel.name} (Encrypted)` : 'Select a channel first'}
               disabled={!activeChannel}
               className="w-full bg-transparent text-[#dbdee1] placeholder-[#6d6f78] focus:outline-none text-sm"
             />

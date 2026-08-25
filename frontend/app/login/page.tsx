@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import { setupUserEncryption } from '@/utils/crypto';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -27,6 +28,9 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.error?.message || 'Login failed');
 
       setAuth(data.token, data.user);
+
+      await setupUserEncryption(data.user.id, data.token);
+
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
