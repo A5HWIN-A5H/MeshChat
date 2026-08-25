@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getPrivateKey, encryptMessage, decryptMessage } from '@/utils/crypto';
 import { Hash, Send, LogOut, ShieldCheck, Plus, Compass, X, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Community {
   id: string;
@@ -282,46 +283,55 @@ export default function DashboardPage() {
     <div className="flex h-screen bg-[#313338] text-[#dbdee1] overflow-hidden relative">
       {/* 1. Community Sidebar */}
       <div className="w-[72px] bg-[#1e1f22] flex flex-col items-center py-3 space-y-3">
-        <div className="w-12 h-12 rounded-3xl bg-[#5865f2] flex items-center justify-center font-bold text-white cursor-pointer hover:rounded-2xl transition-all shadow-md">
+        <motion.div 
+          whileHover={{ scale: 1.05, borderRadius: '16px' }}
+          className="w-12 h-12 rounded-3xl bg-[#5865f2] flex items-center justify-center font-bold text-white cursor-pointer shadow-md"
+        >
           MC
-        </div>
+        </motion.div>
         <hr className="w-8 border-[#35363c]" />
 
         {communities.map((comm) => (
-          <button
+          <motion.button
             key={comm.id}
+            whileHover={{ scale: 1.05, borderRadius: '16px' }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveCommunity(comm)}
-            className={`w-12 h-12 rounded-3xl flex items-center justify-center font-semibold transition-all ${
+            className={`w-12 h-12 flex items-center justify-center font-semibold transition-colors ${
               activeCommunity?.id === comm.id
                 ? 'rounded-2xl bg-[#5865f2] text-white'
-                : 'bg-[#35363c] text-[#dbdee1] hover:rounded-2xl hover:bg-[#5865f2] hover:text-white'
+                : 'rounded-3xl bg-[#35363c] text-[#dbdee1] hover:bg-[#5865f2] hover:text-white'
             }`}
             title={comm.name}
           >
             {comm.name.substring(0, 2).toUpperCase()}
-          </button>
+          </motion.button>
         ))}
 
-        {/* Explore / Search Communities Button */}
-        <button
+        {/* Explore Communities Button */}
+        <motion.button
+          whileHover={{ scale: 1.05, borderRadius: '16px' }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => {
             fetchAllCommunities();
             setShowExploreCommunities(true);
           }}
-          className="w-12 h-12 rounded-3xl bg-[#35363c] text-[#949ba4] flex items-center justify-center hover:rounded-2xl hover:bg-[#5865f2] hover:text-white transition-all"
+          className="w-12 h-12 rounded-3xl bg-[#35363c] text-[#949ba4] flex items-center justify-center hover:bg-[#5865f2] hover:text-white transition-colors"
           title="Explore Communities"
         >
           <Compass className="w-6 h-6" />
-        </button>
+        </motion.button>
 
         {/* Add Community Button */}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05, borderRadius: '16px' }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setShowCreateCommunity(true)}
-          className="w-12 h-12 rounded-3xl bg-[#35363c] text-emerald-400 flex items-center justify-center hover:rounded-2xl hover:bg-emerald-500 hover:text-white transition-all"
+          className="w-12 h-12 rounded-3xl bg-[#35363c] text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors"
           title="Create a Community"
         >
           <Plus className="w-6 h-6" />
-        </button>
+        </motion.button>
       </div>
 
       {/* 2. Channel Sidebar */}
@@ -329,13 +339,15 @@ export default function DashboardPage() {
         <div className="h-12 border-b border-[#1f2023] px-4 flex items-center justify-between font-bold text-white shadow-sm">
           <span className="truncate">{activeCommunity ? activeCommunity.name : 'MeshChat'}</span>
           {activeCommunity && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setShowCreateChannel(true)}
               className="text-[#949ba4] hover:text-white"
               title="Create Channel"
             >
               <Plus className="w-5 h-5" />
-            </button>
+            </motion.button>
           )}
         </div>
 
@@ -362,7 +374,9 @@ export default function DashboardPage() {
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="text-sm font-medium text-white truncate">@{user.username}</span>
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => {
               logout();
               router.push('/login');
@@ -371,7 +385,7 @@ export default function DashboardPage() {
             title="Log Out"
           >
             <LogOut className="w-4 h-4" />
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -382,15 +396,22 @@ export default function DashboardPage() {
             <Hash className="w-5 h-5 text-[#80848e] mr-2" />
             <span className="font-bold text-white">{activeChannel ? activeChannel.name : 'select-channel'}</span>
           </div>
-          <div className="flex items-center space-x-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+          <div className="flex items-center space-x-1.5 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/25">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>End-to-End Encrypted</span>
           </div>
         </div>
 
+        {/* Message List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg) => (
-            <div key={msg.id} className="flex flex-col">
+          {messages.map((msg, index) => (
+            <motion.div 
+              key={msg.id || index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col"
+            >
               <div className="flex items-baseline space-x-2">
                 <span className="font-semibold text-white text-sm">{msg.sender?.username || 'User'}</span>
                 <span className="text-xs text-[#949ba4]">
@@ -398,11 +419,12 @@ export default function DashboardPage() {
                 </span>
               </div>
               <p className="text-[#dbdee1] text-sm mt-1 whitespace-pre-wrap">{msg.content}</p>
-            </div>
+            </motion.div>
           ))}
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Message Input */}
         <div className="p-4 bg-[#313338]">
           <form onSubmit={handleSendMessage} className="bg-[#383a40] rounded-lg px-4 py-2.5 flex items-center">
             <input
@@ -413,171 +435,208 @@ export default function DashboardPage() {
               disabled={!activeChannel}
               className="w-full bg-transparent text-[#dbdee1] placeholder-[#6d6f78] focus:outline-none text-sm"
             />
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={!activeChannel || !inputMessage.trim()}
               className="ml-2 text-[#949ba4] hover:text-white disabled:opacity-50"
             >
               <Send className="w-5 h-5" />
-            </button>
+            </motion.button>
           </form>
         </div>
       </div>
 
       {/* --- MODALS --- */}
+      <AnimatePresence>
+        {/* Explore Communities Modal */}
+        {showExploreCommunities && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              className="bg-[#313338] w-full max-w-lg rounded-xl p-6 shadow-2xl border border-[#232428] text-[#dbdee1] flex flex-col max-h-[80vh]"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <Compass className="w-6 h-6 mr-2 text-[#5865f2]" /> Explore Communities
+                </h2>
+                <button onClick={() => setShowExploreCommunities(false)} className="text-[#949ba4] hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-      {/* Explore / Search Communities Modal */}
-      {showExploreCommunities && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#313338] w-full max-w-lg rounded-lg p-6 shadow-2xl border border-[#232428] text-[#dbdee1] flex flex-col max-h-[80vh]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center">
-                <Compass className="w-6 h-6 mr-2 text-[#5865f2]" /> Explore Communities
-              </h2>
-              <button onClick={() => setShowExploreCommunities(false)} className="text-[#949ba4] hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-[#949ba4]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search communities by name or topic..."
+                  className="w-full rounded-lg bg-[#1e1f22] pl-9 pr-3 py-2.5 text-white placeholder-[#949ba4] text-sm border-none focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
+                />
+              </div>
 
-            {/* Search Bar */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-[#949ba4]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search communities by name or topic..."
-                className="w-full rounded bg-[#1e1f22] pl-9 pr-3 py-2.5 text-white placeholder-[#949ba4] text-sm border-none focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
-              />
-            </div>
-
-            {/* Community List */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-              {filteredExploreList.length === 0 ? (
-                <div className="text-center py-8 text-[#949ba4] text-sm">No communities found.</div>
-              ) : (
-                filteredExploreList.map((comm) => {
-                  const isMember = communities.some((c) => c.id === comm.id);
-                  return (
-                    <div key={comm.id} className="bg-[#2b2d31] p-4 rounded-lg flex items-center justify-between border border-[#1f2023]">
-                      <div>
-                        <h3 className="font-bold text-white text-base">{comm.name}</h3>
-                        <p className="text-xs text-[#949ba4] mt-0.5">{comm.description || 'No description provided.'}</p>
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                {filteredExploreList.length === 0 ? (
+                  <div className="text-center py-8 text-[#949ba4] text-sm">No communities found.</div>
+                ) : (
+                  filteredExploreList.map((comm) => {
+                    const isMember = communities.some((c) => c.id === comm.id);
+                    return (
+                      <div key={comm.id} className="bg-[#2b2d31] p-4 rounded-lg flex items-center justify-between border border-[#1f2023]">
+                        <div>
+                          <h3 className="font-bold text-white text-base">{comm.name}</h3>
+                          <p className="text-xs text-[#949ba4] mt-0.5">{comm.description || 'No description provided.'}</p>
+                        </div>
+                        {isMember ? (
+                          <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-3 py-1.5 rounded font-medium">
+                            Joined
+                          </span>
+                        ) : (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleJoinCommunity(comm.id)}
+                            className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs px-4 py-2 rounded font-medium transition-colors"
+                          >
+                            Join
+                          </motion.button>
+                        )}
                       </div>
-                      {isMember ? (
-                        <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded font-medium">
-                          Joined
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleJoinCommunity(comm.id)}
-                          className="bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs px-4 py-2 rounded font-medium transition-colors"
-                        >
-                          Join
-                        </button>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
-      {/* Create Community Modal */}
-      {showCreateCommunity && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#313338] w-full max-w-md rounded-lg p-6 shadow-2xl border border-[#232428] text-[#dbdee1]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">Create a Community</h2>
-              <button onClick={() => setShowCreateCommunity(false)} className="text-[#949ba4] hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateCommunity} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#949ba4] mb-2">Community Name</label>
-                <input
-                  type="text"
-                  value={newCommName}
-                  onChange={(e) => setNewCommName(e.target.value)}
-                  placeholder="e.g. AI Researchers"
-                  required
-                  className="w-full rounded bg-[#1e1f22] p-3 text-white border-none focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#949ba4] mb-2">Description</label>
-                <input
-                  type="text"
-                  value={newCommDesc}
-                  onChange={(e) => setNewCommDesc(e.target.value)}
-                  placeholder="What is this community about?"
-                  className="w-full rounded bg-[#1e1f22] p-3 text-white border-none focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
-                />
-              </div>
-              <div className="flex justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateCommunity(false)}
-                  className="px-4 py-2 rounded text-white hover:underline"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded bg-[#5865f2] text-white font-medium hover:bg-[#4752c4] transition-colors"
-                >
-                  Create
+        {/* Create Community Modal */}
+        {showCreateCommunity && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              className="bg-[#313338] w-full max-w-md rounded-xl p-6 shadow-2xl border border-[#232428] text-[#dbdee1]"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-white">Create a Community</h2>
+                <button onClick={() => setShowCreateCommunity(false)} className="text-[#949ba4] hover:text-white">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <form onSubmit={handleCreateCommunity} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#949ba4] mb-2">Community Name</label>
+                  <input
+                    type="text"
+                    value={newCommName}
+                    onChange={(e) => setNewCommName(e.target.value)}
+                    placeholder="e.g. AI Researchers"
+                    required
+                    className="w-full rounded-lg bg-[#1e1f22] p-3 text-white border-none focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#949ba4] mb-2">Description</label>
+                  <input
+                    type="text"
+                    value={newCommDesc}
+                    onChange={(e) => setNewCommDesc(e.target.value)}
+                    placeholder="What is this community about?"
+                    className="w-full rounded-lg bg-[#1e1f22] p-3 text-white border-none focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateCommunity(false)}
+                    className="px-4 py-2 rounded text-white hover:underline text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    className="px-6 py-2 rounded-lg bg-[#5865f2] text-white font-medium hover:bg-[#4752c4] transition-colors text-sm"
+                  >
+                    Create
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
 
-      {/* Create Channel Modal */}
-      {showCreateChannel && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#313338] w-full max-w-md rounded-lg p-6 shadow-2xl border border-[#232428] text-[#dbdee1]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">Create Text Channel</h2>
-              <button onClick={() => setShowCreateChannel(false)} className="text-[#949ba4] hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleCreateChannel} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#949ba4] mb-2">Channel Name</label>
-                <input
-                  type="text"
-                  value={newChanName}
-                  onChange={(e) => setNewChanName(e.target.value)}
-                  placeholder="e.g. general-chat"
-                  required
-                  className="w-full rounded bg-[#1e1f22] p-3 text-white border-none focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
-                />
-              </div>
-              <div className="flex justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateChannel(false)}
-                  className="px-4 py-2 rounded text-white hover:underline"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded bg-[#5865f2] text-white font-medium hover:bg-[#4752c4] transition-colors"
-                >
-                  Create Channel
+        {/* Create Channel Modal */}
+        {showCreateChannel && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              className="bg-[#313338] w-full max-w-md rounded-xl p-6 shadow-2xl border border-[#232428] text-[#dbdee1]"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-white">Create Text Channel</h2>
+                <button onClick={() => setShowCreateChannel(false)} className="text-[#949ba4] hover:text-white">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <form onSubmit={handleCreateChannel} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#949ba4] mb-2">Channel Name</label>
+                  <input
+                    type="text"
+                    value={newChanName}
+                    onChange={(e) => setNewChanName(e.target.value)}
+                    placeholder="e.g. general-chat"
+                    required
+                    className="w-full rounded-lg bg-[#1e1f22] p-3 text-white border-none focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateChannel(false)}
+                    className="px-4 py-2 rounded text-white hover:underline text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    className="px-6 py-2 rounded-lg bg-[#5865f2] text-white font-medium hover:bg-[#4752c4] transition-colors text-sm"
+                  >
+                    Create Channel
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
