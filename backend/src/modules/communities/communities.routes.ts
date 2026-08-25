@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { FastifyPluginAsync } from 'fastify';
 import { db } from '../../db';
 import { communities, communityMembers } from '../../db/schema';
@@ -46,6 +47,42 @@ export const communitiesRoutes: FastifyPluginAsync = async (server) => {
       server.log.error(error);
       return reply.status(500).send({ 
         error: { code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create community' } 
+      });
+    }
+  });
+
+  
+  server.get('/', {
+    preValidation: [server.authenticate]
+  }, async (request, reply) => {
+    
+    const userId = request.user.id;
+
+    try {
+      // The SQL JOIN
+      const myCommunities = await db
+        .select({
+          id: communities.id,
+          name: communities.name,
+          description: communities.description,
+          ownerId: communities.ownerId,
+          joinedAt: communityMembers.joinedAt,
+        })
+        .from(communities)
+        .innerJoin(
+          communityMembers, 
+          eq(communities.id, communityMembers.communityId) // The bridge between the tables
+        )
+        .where(eq(communityMembers.userId, userId)); // Filter only for MY memberships
+
+      return reply.status(200).send({
+        communities: myCommunities
+      });
+
+    } catch (error) {
+      server.log.error(error);
+      return reply.status(500).send({ 
+        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Failed to fetch communities' } 
       });
     }
   });
