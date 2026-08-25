@@ -2,6 +2,7 @@ import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import dotenv from 'dotenv';
 import fastifyJwt from '@fastify/jwt';
 import fastifyWebsocket from '@fastify/websocket';
+import fastifyCors from '@fastify/cors';
 import { initRedis } from './lib/redis';
 import { authRoutes } from './modules/auth/auth.routes';
 import { usersRoutes } from './modules/users/users.routes';
@@ -24,6 +25,12 @@ const server = Fastify({
   },
 });
 
+// Register plugins ONCE
+server.register(fastifyCors, {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+});
+
 server.register(fastifyJwt, { secret: process.env.JWT_SECRET! });
 server.register(fastifyWebsocket);
 
@@ -37,7 +44,7 @@ server.decorate("authenticate", async function (request: FastifyRequest, reply: 
 
 server.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() }));
 
-
+// Modules
 server.register(authRoutes, { prefix: '/api/v1/auth' });
 server.register(usersRoutes, { prefix: '/api/v1/users' });
 server.register(communitiesRoutes, { prefix: '/api/v1/communities' });
