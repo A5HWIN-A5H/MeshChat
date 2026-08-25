@@ -5,6 +5,7 @@ import { authRoutes } from './modules/auth/auth.routes';
 import { usersRoutes } from './modules/users/users.routes';
 import { communitiesRoutes } from './modules/communities/communities.routes';
 import { channelsRoutes } from './modules/channels/channels.routes';
+import { messagesRoutes } from './modules/messages/messages.routes';
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ server.register(authRoutes, { prefix: '/api/v1/auth' });
 server.register(usersRoutes, { prefix: '/api/v1/users' });
 server.register(communitiesRoutes, { prefix: '/api/v1/communities' });
 server.register(channelsRoutes, { prefix: '/api/v1/communities' });
+server.register(messagesRoutes, { prefix: '/api/v1/channels' });
 
 async function start() {
   try {

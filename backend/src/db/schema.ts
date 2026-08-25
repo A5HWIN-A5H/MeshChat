@@ -41,3 +41,20 @@ export const channels = pgTable('channels', {
   
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+export const messages = pgTable('messages', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  
+  channelId: uuid('channel_id')
+    .references(() => channels.id, { onDelete: 'cascade' })
+    .notNull(),
+    
+  senderId: uuid('sender_id')
+    .references(() => users.id)
+    .notNull(),
+    
+  content: text('content').notNull(),
+  
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

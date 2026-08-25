@@ -22,6 +22,13 @@
       "when": 1787671913196,
       "tag": "0002_futuristic_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787672327940,
+      "tag": "0003_short_freak",
+      "breakpoints": true
     }
   ]
 }
