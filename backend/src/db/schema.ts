@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, primaryKey, pgEnum } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -25,3 +25,19 @@ export const communityMembers = pgTable('community_members', {
 }, (table) => ({
     pk: primaryKey({ columns: [table.communityId, table.userId] })
 }));
+
+export const channelTypeEnum = pgEnum('channel_type', ['TEXT', 'VOICE', 'ANNOUNCEMENT']);
+
+export const channels = pgTable('channels', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  
+  communityId: uuid('community_id')
+    .references(() => communities.id, { onDelete: 'cascade' })
+    .notNull(),
+    
+  name: varchar('name', { length: 255 }).notNull(),
+  
+  type: channelTypeEnum('type').default('TEXT').notNull(),
+  
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});

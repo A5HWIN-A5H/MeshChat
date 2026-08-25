@@ -15,6 +15,13 @@
       "when": 1787671319356,
       "tag": "0001_jittery_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787671913196,
+      "tag": "0002_futuristic_wilson_fisk",
+      "breakpoints": true
     }
   ]
 }
