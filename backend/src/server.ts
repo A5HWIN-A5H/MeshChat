@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import dotenv from 'dotenv';
+import { authRoutes } from './modules/auth/auth.routes';
 
 dotenv.config();
 
@@ -26,6 +27,9 @@ server.get('/health', async (request, reply) => {
     uptime: process.uptime(),
   };
 });
+
+
+server.register(authRoutes, { prefix: '/api/v1/auth' });
 
 async function start() {
   try {
