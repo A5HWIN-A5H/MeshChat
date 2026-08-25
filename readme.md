@@ -49,18 +49,18 @@ MeshChat is a production-ready, full-stack real-time messaging application engin
 mesh-chat/
 ├── backend/
 │   ├── src/
-│   │   ├── db/             # Drizzle ORM schema and database connection
-│   │   ├── lib/            # Redis and utility clients
-│   │   ├── modules/        # Domain-driven routes & gateways (Auth, Users, Communities, Channels, Messages, Realtime)
-│   │   └── server.ts       # Fastify server entry point
+│   │   ├── db/              # Drizzle ORM schema and database connection
+│   │   ├── lib/             # Redis and utility clients
+│   │   ├── modules/         # Domain-driven routes & gateways (Auth, Users, Communities, Channels, Messages, Realtime)
+│   │   └── server.ts        # Fastify server entry point
 │   └── package.json
 └── frontend/
     ├── app/
-    │   ├── dashboard/      # Main chat interface and modals
-    │   ├── login/          # User login & E2EE key sync
-    │   └── register/       # User registration & keypair generation
-    ├── store/              # Zustand authentication store
-    ├── utils/              # Web Crypto API encryption/decryption utilities
+    │   ├── dashboard/       # Main chat interface and modals
+    │   ├── login/           # User login & E2EE key sync
+    │   └── register/        # User registration & keypair generation
+    ├── store/               # Zustand authentication store
+    ├── utils/               # Web Crypto API encryption/decryption utilities
     └── package.json
 
 ---

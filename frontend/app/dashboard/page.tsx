@@ -128,25 +128,16 @@ export default function DashboardPage() {
       .catch(console.error);
   }, [token, activeCommunity]);
 
-  // Fetch messages & open WebSocket when active channel changes
   useEffect(() => {
     if (!token || !activeChannel || !user) return;
-
-    const privKey = getPrivateKey(user.id);
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/channels/${activeChannel.id}/messages`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then((res) => res.json())
-      .then(async (data) => {
+      .then((data) => {
         if (data.messages) {
-          const decryptedMessages = await Promise.all(
-            data.messages.map(async (msg: Message) => {
-              const decryptedContent = privKey ? await decryptMessage(privKey, msg.content) : msg.content;
-              return { ...msg, content: decryptedContent };
-            })
-          );
-          setMessages(decryptedMessages.reverse());
+          setMessages(data.messages.reverse());
         }
       })
       .catch(console.error);
@@ -155,14 +146,11 @@ export default function DashboardPage() {
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    ws.onmessage = async (event) => {
+    ws.onmessage = (event) => {
       const payload = JSON.parse(event.data);
       if (payload.event === 'NEW_MESSAGE') {
         const incomingMsg: Message = payload.data;
-        const privKey = getPrivateKey(user.id);
-        const decryptedContent = privKey ? await decryptMessage(privKey, incomingMsg.content) : incomingMsg.content;
-        
-        setMessages((prev) => [...prev, { ...incomingMsg, content: decryptedContent }]);
+        setMessages((prev) => [...prev, incomingMsg]);
       }
     };
 
@@ -171,29 +159,15 @@ export default function DashboardPage() {
     };
   }, [token, activeChannel, user]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim() || !wsRef.current || !user || !token) return;
 
     try {
-      const keyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${user.id}/keys`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const keyData = await keyRes.json();
-      
-      let ciphertext = inputMessage;
-      if (keyData.user?.publicKey) {
-        ciphertext = await encryptMessage(keyData.user.publicKey, inputMessage);
-      }
-
-      wsRef.current.send(JSON.stringify({ content: ciphertext }));
+      wsRef.current.send(JSON.stringify({ content: inputMessage }));
       setInputMessage('');
     } catch (err) {
-      console.error('Encryption transmission failed:', err);
+      console.error('Transmission failed:', err);
     }
   };
 
