@@ -60,6 +60,11 @@ export const realtimeGateway: FastifyPluginAsync = async (server) => {
     }
     channelSockets.get(channelId)!.add(socket);
 
+    await redisPublisher.publish(`channel:${channelId}`, JSON.stringify({
+      event: 'USER_JOINED',
+      data: { id: user.id, username: user.username }
+    }));
+
     socket.on('message', async (raw:Buffer) => {
       try {
         const payload = JSON.parse(raw.toString());
@@ -94,6 +99,10 @@ export const realtimeGateway: FastifyPluginAsync = async (server) => {
           await redisSubscriber.unsubscribe(`channel:${channelId}`);
         }
       }
+      await redisPublisher.publish(`channel:${channelId}`, JSON.stringify({
+        event: 'USER_LEFT',
+        data: { id: user.id, username: user.username }
+      }));
     });
   });
 };
