@@ -1,6 +1,9 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import dotenv from 'dotenv';
+import fastifyJwt from '@fastify/jwt';
 import { authRoutes } from './modules/auth/auth.routes';
+import { usersRoutes } from './modules/users/users.routes';
+
 
 dotenv.config();
 
@@ -20,6 +23,20 @@ const server = Fastify({
   },
 });
 
+
+server.register(fastifyJwt, {
+  secret: process.env.JWT_SECRET!
+});
+
+
+server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
+  try {
+    await request.jwtVerify();
+  } catch (err) {
+    reply.status(401).send({ error: { code: 'UNAUTHORIZED', message: 'Missing or invalid token' } });
+  }
+});
+
 server.get('/health', async (request, reply) => {
   return {
     status: 'ok',
@@ -30,6 +47,7 @@ server.get('/health', async (request, reply) => {
 
 
 server.register(authRoutes, { prefix: '/api/v1/auth' });
+server.register(usersRoutes, { prefix: '/api/v1/users' });
 
 async function start() {
   try {
