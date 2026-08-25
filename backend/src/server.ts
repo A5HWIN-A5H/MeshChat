@@ -1,11 +1,14 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import dotenv from 'dotenv';
 import fastifyJwt from '@fastify/jwt';
+import fastifyWebsocket from '@fastify/websocket';
+import { initRedis } from './lib/redis';
 import { authRoutes } from './modules/auth/auth.routes';
 import { usersRoutes } from './modules/users/users.routes';
 import { communitiesRoutes } from './modules/communities/communities.routes';
 import { channelsRoutes } from './modules/channels/channels.routes';
 import { messagesRoutes } from './modules/messages/messages.routes';
+import { realtimeGateway } from './modules/realtime/realtime.gateway';
 
 dotenv.config();
 
@@ -16,20 +19,13 @@ const server = Fastify({
   logger: {
     transport: {
       target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss Z',
-        ignore: 'pid,hostname',
-      },
+      options: { colorize: true, translateTime: 'HH:MM:ss Z', ignore: 'pid,hostname' },
     },
   },
 });
 
-
-server.register(fastifyJwt, {
-  secret: process.env.JWT_SECRET!
-});
-
+server.register(fastifyJwt, { secret: process.env.JWT_SECRET! });
+server.register(fastifyWebsocket);
 
 server.decorate("authenticate", async function (request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -39,13 +35,7 @@ server.decorate("authenticate", async function (request: FastifyRequest, reply: 
   }
 });
 
-server.get('/health', async (request, reply) => {
-  return {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  };
-});
+server.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() }));
 
 
 server.register(authRoutes, { prefix: '/api/v1/auth' });
@@ -53,9 +43,11 @@ server.register(usersRoutes, { prefix: '/api/v1/users' });
 server.register(communitiesRoutes, { prefix: '/api/v1/communities' });
 server.register(channelsRoutes, { prefix: '/api/v1/communities' });
 server.register(messagesRoutes, { prefix: '/api/v1/channels' });
+server.register(realtimeGateway);
 
 async function start() {
   try {
+    await initRedis();
     await server.listen({ port, host });
     console.log(`Server listening on http://${host}:${port}`);
   } catch (err) {
