@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import fastifyJwt from '@fastify/jwt';
 import { authRoutes } from './modules/auth/auth.routes';
 import { usersRoutes } from './modules/users/users.routes';
-
+import { communitiesRoutes } from './modules/communities/communities.routes';
 
 dotenv.config();
 
@@ -48,6 +48,7 @@ server.get('/health', async (request, reply) => {
 
 server.register(authRoutes, { prefix: '/api/v1/auth' });
 server.register(usersRoutes, { prefix: '/api/v1/users' });
+server.register(communitiesRoutes, { prefix: '/api/v1/communities' });
 
 async function start() {
   try {
