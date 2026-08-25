@@ -5,6 +5,7 @@ export const users = pgTable('users', {
   username: varchar('username', { length: 50 }).notNull().unique(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  publicKey: text('public_key'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -52,9 +53,10 @@ export const messages = pgTable('messages', {
   senderId: uuid('sender_id')
     .references(() => users.id)
     .notNull(),
-    
+
   content: text('content').notNull(),
   
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
