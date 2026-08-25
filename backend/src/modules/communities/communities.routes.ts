@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { FastifyPluginAsync } from 'fastify';
 import { db } from '../../db';
 import { communities, communityMembers } from '../../db/schema';
 
 export const communitiesRoutes: FastifyPluginAsync = async (server) => {
+  
   
   server.post('/', {
     preValidation: [server.authenticate],
@@ -19,7 +20,6 @@ export const communitiesRoutes: FastifyPluginAsync = async (server) => {
     }
   }, async (request, reply) => {
     const { name, description } = request.body as any;
-    
     const userId = request.user.id; 
 
     try {
@@ -52,14 +52,27 @@ export const communitiesRoutes: FastifyPluginAsync = async (server) => {
   });
 
   
+  server.get('/explore', {
+    preValidation: [server.authenticate]
+  }, async (request, reply) => {
+    try {
+      const allCommunities = await db.select().from(communities);
+      return reply.status(200).send({ communities: allCommunities });
+    } catch (error) {
+      server.log.error(error);
+      return reply.status(500).send({ 
+        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Failed to fetch communities for exploration' } 
+      });
+    }
+  });
+
+  
   server.get('/', {
     preValidation: [server.authenticate]
   }, async (request, reply) => {
-    
     const userId = request.user.id;
 
     try {
-      // The SQL JOIN
       const myCommunities = await db
         .select({
           id: communities.id,
@@ -71,9 +84,9 @@ export const communitiesRoutes: FastifyPluginAsync = async (server) => {
         .from(communities)
         .innerJoin(
           communityMembers, 
-          eq(communities.id, communityMembers.communityId) // The bridge between the tables
+          eq(communities.id, communityMembers.communityId)
         )
-        .where(eq(communityMembers.userId, userId)); // Filter only for MY memberships
+        .where(eq(communityMembers.userId, userId));
 
       return reply.status(200).send({
         communities: myCommunities
@@ -83,6 +96,45 @@ export const communitiesRoutes: FastifyPluginAsync = async (server) => {
       server.log.error(error);
       return reply.status(500).send({ 
         error: { code: 'INTERNAL_SERVER_ERROR', message: 'Failed to fetch communities' } 
+      });
+    }
+  });
+
+  
+  server.post('/:id/join', {
+    preValidation: [server.authenticate]
+  }, async (request, reply) => {
+    const { id: communityId } = request.params as { id: string };
+    const userId = request.user.id;
+
+    try {
+      
+      const existing = await db
+        .select()
+        .from(communityMembers)
+        .where(
+          and(
+            eq(communityMembers.communityId, communityId),
+            eq(communityMembers.userId, userId)
+          )
+        );
+
+      if (existing.length > 0) {
+        return reply.status(400).send({
+          error: { code: 'ALREADY_MEMBER', message: 'You are already a member of this community' }
+        });
+      }
+
+      await db.insert(communityMembers).values({
+        communityId,
+        userId,
+      });
+
+      return reply.status(200).send({ message: 'Successfully joined community' });
+    } catch (error) {
+      server.log.error(error);
+      return reply.status(500).send({ 
+        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Failed to join community' } 
       });
     }
   });
